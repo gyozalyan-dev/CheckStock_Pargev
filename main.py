@@ -134,7 +134,8 @@ async def income_endpoint(
     db: AsyncSession = Depends(get_db_session)
 ):
     sku = normalize_sku(sku)
-    clean_name = name.strip() or "Товар"
+    normalized_input_name = " ".join(name.strip().split())
+    is_default_or_empty = not normalized_input_name or normalized_input_name.casefold() == "товар"
 
     if not sku:
         return alert_redirect("Укажите артикул (SKU) товара!")
@@ -142,6 +143,36 @@ async def income_endpoint(
         return alert_redirect("Количество должно быть больше 0!")
     if from_warehouse_id == warehouse_id:
         return alert_redirect("Склад-источник и склад-получатель совпадают!")
+
+    # Проверка соответствия: 1 товар = 1 артикул по всей базе
+    all_res = await db.execute(select(Stock))
+    all_stocks = all_res.scalars().all()
+
+    existing_by_sku = next((s for s in all_stocks if s.sku == sku), None)
+    existing_by_name = (
+        next((s for s in all_stocks if s.name.casefold() == normalized_input_name.casefold()), None)
+        if not is_default_or_empty else None
+    )
+
+    if existing_by_name and existing_by_name.sku != sku:
+        return alert_redirect(
+            f"Товар «{existing_by_name.name}» уже закреплён за артикулом {existing_by_name.sku}. "
+            f"Пожалуйста, используйте артикул {existing_by_name.sku}!"
+        )
+
+    if existing_by_sku:
+        if not is_default_or_empty and existing_by_sku.name.casefold() != normalized_input_name.casefold():
+            return alert_redirect(
+                f"Артикул {sku} уже закреплён за товаром «{existing_by_sku.name}». "
+                f"Укажите «{existing_by_sku.name}» или оставьте поле названия пустым!"
+            )
+        clean_name = existing_by_sku.name
+    else:
+        if is_default_or_empty:
+            return alert_redirect(
+                f"Артикул {sku} новый в системе — пожалуйста, укажите наименование товара!"
+            )
+        clean_name = normalized_input_name
 
     res = await db.execute(select(Stock).where(Stock.warehouse_id == warehouse_id, Stock.sku == sku))
     target_stock = res.scalar_one_or_none()
