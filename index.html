@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>CheckStock — Оперативный учёт</title>
+    <style>
+         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; min-height: 100vh; height: auto !important; overflow-y: auto !important; }
+        .container { max-width: 1050px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .header h2 { margin: 0; font-size: 24px; }
+        .header p { margin: 5px 0 0 0; opacity: 0.8; font-size: 14px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card h4 { margin-top: 0; margin-bottom: 20px; color: #222; font-size: 18px; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eef2f5; }
+        th { background-color: #f8f9fa; color: #666; font-weight: 600; }
+        .fw-bold { font-weight: bold; }
+        .text-warning { color: #f39c12; font-weight: 600; }
+        .text-success { color: #27ae60; font-weight: bold; }
+
+        /* Стили для абсолютной симметрии форм */
+        .row { display: flex; gap: 30px; }
+        .col-6 { flex: 1; display: flex; flex-direction: column; }
+        .form-container { height: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .form-group { margin-bottom: 0; }
+        .form-group label { display: block; margin-bottom: 6px; color: #555; font-size: 14px; font-weight: 500; }
+        .form-control, .form-select { width: 100%; padding: 10px; border: 1px solid #cccccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; height: 40px; }
+        .form-control:focus, .form-select:focus { border-color: #2a5298; outline: none; }
+
+        /* Выравнивание кнопок строго на одной горизонтальной линии */
+        .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 4px; color: white; font-weight: bold; font-size: 14px; cursor: pointer; height: 45px; box-sizing: border-box; margin-top: auto; }
+        .btn-success { background-color: #27ae60; }
+        .btn-success:hover { background-color: #219653; }
+        .btn-primary { background-color: #2980b9; }
+        .btn-primary:hover { background-color: #2471a3; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; display: inline-block; height: auto; margin-top: 0;
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h2>CheckStock — Где сейчас товар?</h2>
+        <p>Автономный учёт остатков на складах фулфилмента (ФФ), резервов FBS и товаров в пути</p>
+    </div>
+<div class="card p-3 mb-4">
+    <h4>1. Остатки товаров на складах </h4>
+
+
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 0; table-layout: fixed;">
+        <thead>
+            <tr style="background-color: #f8f9fa;">
+                <th style="padding: 12px; padding-left: 10px; text-align: left; color: #666; font-weight: 600; width: 18%;">Артикул(SKU)</th>
+                <th style="padding: 12px; padding-left: 10px; text-align: left; color: #666; font-weight: 600; width: 15%;">Наименование</th>
+                <th style="padding: 12px; padding-left: 10px; text-align: left; color: #666; font-weight: 600; width: 12%;">Склад </th>
+                <th style="padding: 12px; padding-left: 15px; text-align: left; color: #666; font-weight: 600; width: 12%;">Наличие </th>
+                <th style="padding: 12px; padding-left: 25px; text-align: left; color: #666; font-weight: 600; width: 10%;">FBS</th>
+                <th style="padding: 12px; padding-left: 25px; text-align: left; color: #666; font-weight: 600; width: 10%;">FBO</th>
+                <th style="padding: 12px; padding-left: 20px; text-align: left; color: #666; font-weight: 600; width: 14%;">Доступные </th>
+            </tr>
+        </thead>
+    </table>
+
+    <!-- ЧАСТЬ 2: СКРОЛЛ-БОКС — СТРОГОЕ ЗЕРКАЛЬНОЕ ЗАЩЁЛКИВАНИЕ СТРОК ПО ЛЕВОЙ ОСИ -->
+    <div style="max-height: 350px; overflow-y: auto !important; border: 1px solid #eef2f5; border-top: none; border-radius: 0 0 4px 4px; margin-bottom: 15px;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 0; table-layout: fixed;">
+            <tbody>
+                {% for item in stocks %}
+                <tr>
+                    <td style="padding: 12px; padding-left: 10px; text-align: left; border-bottom: 1px solid #eef2f5; width: 18%;" class="fw-bold">{{ item.sku }}</td>
+                    <td style="padding: 12px; padding-left: 10px; text-align: left; border-bottom: 1px solid #eef2f5; width: 15%;">{{ item.name }}</td>
+
+
+                    <td style="padding: 12px; padding-left: 10px; text-align: left; border-bottom: 1px solid #eef2f5; width: 12%; font-weight: bold;">
+                        {% if item.warehouse_name == "WB" %}
+                            <span style="color: #833ab4;">{{ item.warehouse_name }}</span>
+                        {% elif item.warehouse_name == "Ozon" %}
+                            <span style="color: #005bff;">{{ item.warehouse_name }}</span>
+                        {% elif item.warehouse_name == "Яндекс.Маркет" %}
+                            <span style="color: #ffcc00; text-shadow: 0px 0px 1px rgba(0,0,0,0.2);">Я.M.</span>
+                        {% else %}
+                            <span style="color: #333;">{{ item.warehouse_name }}</span>
+                        {% endif %}
+                    </td>
+
+
+                    <td style="padding: 12px; padding-left: 15px; text-align: left; border-bottom: 1px solid #eef2f5; width: 12%;">{{ item.physical_qty }} шт.</td>
+                    <td style="padding: 18px; padding-left: 10px; text-align: left; border-bottom: 1px solid #eef2f5; width: 10%;" class="text-warning">{{ item.reserved_qty }} шт.</td>
+                    <td style="padding: 12px; padding-left: 20px; text-align: left; border-bottom: 1px solid #eef2f5; width: 10%; color: #2980b9; font-weight: bold;">{{ item.transit_qty }} шт.</td>
+                    <td style="padding: 20px; padding-left: 27px; text-align: left; border-bottom: 1px solid #eef2f5; width: 10%;" class="text-success">{{ item.available_qty }} шт.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+    <!-- 2. БЛОК ФОРМ БОК О БОК — ИСПРАВЛЕННЫЙ ВАРИАНТ С ИДЕАЛЬНОЙ ЛИНИЕЙ КНОПОК -->
+    <div class="row">
+
+        <!-- ЛЕВАЯ ФОРМА: ПРИХОД / ВОЗВРАТ -->
+        <div class="col-6">
+            <div class="card form-container" style="margin-bottom: 0;">
+                <h4>3. Оформить приход / возврат товара</h4>
+                <form action="/stock/income" method="post">
+                    <div class="form-group mb-2">
+                        <label>Откуда (Источник):</label>
+                        <select class="form-select" name="from_warehouse_id">
+                            <option value="0">-- Поставщик / Новое оприходование --</option>
+                            {% for wh in warehouses %}
+                                {% if wh.id <= 5 %}
+                                    <option value="{{ wh.id }}">{{ wh.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Куда (Склад ФФ получатель):</label>
+                        <select class="form-select" name="warehouse_id">
+                            <option value="1">Север</option>
+                            <option value="2">Юг</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Артикул / SKU:</label>
+                        <input type="text" class="form-control" name="sku" placeholder="Например: SKU-104" required>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Наименование товара:</label>
+                        <input type="text" class="form-control" name="name" placeholder="Например: sigar">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Количество (шт.):</label>
+                        <input type="number" class="form-control" name="quantity" value="1" min="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Оформить операцию</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ ФОРМА: РАСХОД / ПЕРЕМЕЩЕНИЕ (ПРИПОДНЯЛИ СИНЮЮ КНОПКУ НАВЕРХ) -->
+        <div class="col-6">
+            <div class="card form-container" style="margin-bottom: 0;">
+                <h4>4. Оформить расход / перемещение</h4>
+                <form action="/stock/transfer" method="post">
+                    <div class="form-group mb-2">
+                        <label>Откуда (Склад ФФ отправитель):</label>
+                        <select class="form-select" name="from_warehouse_id">
+                            <option value="1">Север</option>
+                            <option value="2">Юг</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Куда (Направление):</label>
+                        <select class="form-select" name="to_warehouse_id">
+                            <option value="1">Север (Внутреннее FF)</option>
+                            <option value="2">Юг (Внутреннее FF)</option>
+                            <option value="3">WB (Режим FBO)</option>
+                            <option value="4">Ozon (Режим FBO)</option>
+                            <option value="5">Яндекс.Маркет (Режим FBO)</option>
+                            <option value="7">WB (Режим FBS)</option>
+                            <option value="8">Ozon (Режим FBS)</option>
+                            <option value="9">Яндекс.Маркет (Режим FBS)</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Артикул / SKU:</label>
+                        <input type="text" class="form-control" name="sku" placeholder="Например: SKU-108" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Количество (шт.):</label>
+                        <input type="number" class="form-control" name="quantity" value="1" min="1" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="margin-top: 64px !important;">Оформить перемещение</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
