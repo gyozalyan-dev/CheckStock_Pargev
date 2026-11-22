@@ -197,8 +197,29 @@ async def income_endpoint(
         case 0:
             target_stock.physical_qty += quantity
 
-        case 3 | 4 | 5 | 7 | 8 | 9:
-            market_wh_id = {7: 3, 8: 4, 9: 5}.get(from_warehouse_id, from_warehouse_id)
+        case 3 | 4 | 5:
+            # Возврат строго с FBO -> списываем ТОЛЬКО из transit_qty (FBO)
+            market_res = await db.execute(
+                select(Stock).where(
+                    Stock.warehouse_id == from_warehouse_id,
+                    Stock.source_ff_id == warehouse_id,
+                    Stock.sku == sku
+                )
+            )
+            market_stock = market_res.scalar_one_or_none()
+
+            if not market_stock or market_stock.transit_qty < quantity:
+                avail_fbo = market_stock.transit_qty if market_stock else 0
+                return alert_redirect(
+                    f"Недостаточно товара на FBO для возврата! На FBO числится: {avail_fbo} шт."
+                )
+
+            market_stock.transit_qty -= quantity
+            target_stock.physical_qty += quantity
+
+        case 7 | 8 | 9:
+            # Возврат строго с FBS -> списываем ТОЛЬКО из reserved_qty (FBS)
+            market_wh_id = {7: 3, 8: 4, 9: 5}[from_warehouse_id]
             market_res = await db.execute(
                 select(Stock).where(
                     Stock.warehouse_id == market_wh_id,
@@ -208,18 +229,13 @@ async def income_endpoint(
             )
             market_stock = market_res.scalar_one_or_none()
 
-            if not market_stock:
-                return alert_redirect("На выбранном маркетплейсе нет резерва или транзита для этого склада!")
-
-            if market_stock.reserved_qty >= quantity:
-                market_stock.reserved_qty -= quantity
-            elif market_stock.transit_qty >= quantity:
-                market_stock.transit_qty -= quantity
-                target_stock.physical_qty += quantity
-            else:
+            if not market_stock or market_stock.reserved_qty < quantity:
+                avail_fbs = market_stock.reserved_qty if market_stock else 0
                 return alert_redirect(
-                    f"Недостаточно товара для возврата! В резерве: {market_stock.reserved_qty} шт., в пути: {market_stock.transit_qty} шт."
+                    f"Недостаточно товара в резерве FBS для возврата! В резерве FBS: {avail_fbs} шт."
                 )
+
+            market_stock.reserved_qty -= quantity
 
         case _:
             source_res = await db.execute(
