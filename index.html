@@ -178,3 +178,44 @@
         </div>
 
     </div>
+<script>
+(function () {
+    const skuMap = {};
+    {% for s in stocks %}
+        skuMap[{{ s.sku.strip().upper() | tojson }}] = {{ s.name | tojson }};
+    {% endfor %}
+
+    const incomeForm = document.querySelector('form[action="/stock/income"]');
+    if (!incomeForm) return;
+
+    const skuInput = incomeForm.querySelector('input[name="sku"]');
+    const nameInput = incomeForm.querySelector('input[name="name"]');
+    if (!skuInput || !nameInput) return;
+
+    function syncProductName() {
+        const raw = skuInput.value.trim().toUpperCase();
+        if (!raw) {
+            nameInput.value = "";
+            nameInput.readOnly = false;
+            nameInput.style.backgroundColor = "";
+            return;
+        }
+
+        const matchedName = skuMap[raw] || skuMap["SKU-" + raw];
+        if (matchedName) {
+            nameInput.value = matchedName;
+            nameInput.readOnly = true;
+            nameInput.style.backgroundColor = "#e9ecef";
+        } else {
+            if (nameInput.readOnly) {
+                nameInput.value = "";
+            }
+            nameInput.readOnly = false;
+            nameInput.style.backgroundColor = "";
+        }
+    }
+
+    skuInput.addEventListener("input", syncProductName);
+    skuInput.addEventListener("change", syncProductName);
+})();
+</script>
