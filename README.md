@@ -16,19 +16,20 @@
 ## Структура проекта
 
 ```text
-├── app/
-│   ├── main.py              # Backend API, ORM-модели и логика расчёта остатков
-│   └── templates/
-│       └── index.html       # Веб-интерфейс таблицы остатков и форм операций
-├── test_checkstock.py       # Автотесты (Pytest)
-├── requirements.txt         # Зависимости проекта
-├── .gitignore               # Исключения для Git
-└── README.md                # Документация
+├── main.py              # Backend API, ORM-модели и логика расчёта остатков
+├── index.html           # Веб-интерфейс таблицы остатков и форм операций
+├── database.py          # Настройка подключения и сессий БД
+├── models.py            # Модели данных SQLAlchemy
+├── services.py          # Сервисный слой складских операций
+├── test_checkstock.py   # Автотесты (Pytest)
+├── requirements.txt     # Зависимости проекта
+├── .gitignore           # Исключения для Git
+└── README.md            # Документация
 ```
 
 ## Стек технологий
 
-* **Backend:** Python 3.12+, FastAPI, SQLAlchemy 2.0 (Async), Jinja2
+* **Backend:** Python 3.13, FastAPI, SQLAlchemy 2.0 (Async), Jinja2
 * **База данных:** SQLite (`aiosqlite`, in-memory)
 * **Тестирование:** Pytest (`pytest-asyncio`)
 
@@ -41,12 +42,13 @@
 
 2. Запустите сервер (на свободном порту `5050` во избежание конфликтов с зарезервированными портами Windows):
    ```bash
-   python app/main.py
+   python main.py
    ```
-   *(Либо через Uvicorn: `python -m uvicorn app.main:app --host 127.0.0.1 --port 5050`)*
+   *(Либо через Uvicorn: `python -m uvicorn main:app --host 127.0.0.1 --port 5050`)*
 
 3. Откройте в браузере:
    `http://127.0.0.1:5050`
+
 
 ## Запуск автотестов
 
